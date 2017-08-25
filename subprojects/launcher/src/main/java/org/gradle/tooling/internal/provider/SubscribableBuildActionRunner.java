@@ -23,6 +23,8 @@ import org.gradle.internal.invocation.BuildActionRunner;
 import org.gradle.internal.invocation.BuildController;
 import org.gradle.internal.progress.BuildOperationListener;
 import org.gradle.internal.progress.BuildOperationListenerManager;
+import org.gradle.api.events.CustomEventListener;
+import org.gradle.internal.progress.CustomEventListenerManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,12 +32,16 @@ import java.util.List;
 public class SubscribableBuildActionRunner implements BuildActionRunner {
     private final BuildActionRunner delegate;
     private final BuildOperationListenerManager buildOperationListenerManager;
+    private final CustomEventListenerManager customEventListenerManager;
     private final List<BuildOperationListener> listeners = new ArrayList<BuildOperationListener>();
+    private final List<CustomEventListener> customEventListeners = new ArrayList<CustomEventListener>();
     private final List<? extends SubscribableBuildActionRunnerRegistration> registrations;
 
-    public SubscribableBuildActionRunner(BuildActionRunner delegate, BuildOperationListenerManager buildOperationListenerManager, List<? extends SubscribableBuildActionRunnerRegistration> registrations) {
+    public SubscribableBuildActionRunner(BuildActionRunner delegate, BuildOperationListenerManager buildOperationListenerManager,
+                                         CustomEventListenerManager customEventListenerManager, List<? extends SubscribableBuildActionRunnerRegistration> registrations) {
         this.delegate = delegate;
         this.buildOperationListenerManager = buildOperationListenerManager;
+        this.customEventListenerManager = customEventListenerManager;
         this.registrations = registrations;
     }
 
@@ -53,7 +59,11 @@ public class SubscribableBuildActionRunner implements BuildActionRunner {
             for (BuildOperationListener listener : listeners) {
                 buildOperationListenerManager.removeListener(listener);
             }
+            for (CustomEventListener listener : customEventListeners) {
+                customEventListenerManager.removeListener(listener);
+            }
             listeners.clear();
+            customEventListeners.clear();
         }
     }
 
@@ -63,11 +73,19 @@ public class SubscribableBuildActionRunner implements BuildActionRunner {
             for (BuildOperationListener listener : registration.createListeners(clientSubscriptions, eventConsumer)) {
                 registerListener(listener);
             }
+            for (CustomEventListener listener : registration.createCustomEventListeners(eventConsumer)) {
+                registerCustomEventListener(listener);
+            }
         }
     }
 
     private void registerListener(BuildOperationListener listener) {
         listeners.add(listener);
         buildOperationListenerManager.addListener(listener);
+    }
+
+    private void registerCustomEventListener(CustomEventListener listener) {
+        customEventListeners.add(listener);
+        customEventListenerManager.addListener(listener);
     }
 }

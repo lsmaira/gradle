@@ -17,6 +17,7 @@ package org.gradle.tooling;
 
 import org.gradle.api.Incubating;
 import org.gradle.tooling.events.OperationType;
+import org.gradle.tooling.events.PartialResultListener;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -253,6 +254,17 @@ public interface LongRunningOperation {
      * @since 2.6
      */
     LongRunningOperation addProgressListener(org.gradle.tooling.events.ProgressListener listener, OperationType... operationTypes);
+
+    /**
+     * Adds a partial result listener which will receive partial result events.
+     *
+     * <p>Listeners will be notified only when an event of the expected type is triggered.</p>
+     *
+     * @param listener The listener.
+     * @return this.
+     * @since 4.3
+     */
+    LongRunningOperation addPartialResultListener(PartialResultListener listener);
 
     /**
      * Sets the cancellation token to use to cancel the operation if required.

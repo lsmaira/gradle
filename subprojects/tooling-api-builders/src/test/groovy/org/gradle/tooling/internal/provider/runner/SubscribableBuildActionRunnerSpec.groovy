@@ -21,6 +21,7 @@ import org.gradle.initialization.BuildEventConsumer
 import org.gradle.internal.invocation.BuildActionRunner
 import org.gradle.internal.invocation.BuildController
 import org.gradle.internal.progress.BuildOperationListenerManager
+import org.gradle.internal.progress.CustomEventListenerManager
 import org.gradle.internal.service.ServiceRegistry
 import org.gradle.tooling.internal.provider.BuildClientSubscriptions
 import org.gradle.tooling.internal.provider.SubscribableBuildAction
@@ -34,10 +35,11 @@ class SubscribableBuildActionRunnerSpec extends Specification {
         given:
         BuildActionRunner buildActionRunner = Mock(BuildActionRunner)
         BuildOperationListenerManager buildOperationService = Mock(BuildOperationListenerManager)
+        CustomEventListenerManager customEventListenerManager = Mock(CustomEventListenerManager)
         SubscribableBuildAction buildAction = subscribableBuildAction() //Mock(SubscribableBuildAction)
         BuildController buildController = buildController() //Mock(BuildController)
 
-        def runner = new SubscribableBuildActionRunner(buildActionRunner, buildOperationService, [new ToolingApiSubscribableBuildActionRunnerRegistration()]);
+        def runner = new SubscribableBuildActionRunner(buildActionRunner, buildOperationService, customEventListenerManager, [new ToolingApiSubscribableBuildActionRunnerRegistration()]);
 
         when:
         runner.run(buildAction, buildController)

@@ -88,7 +88,10 @@ import org.gradle.internal.nativeintegration.filesystem.FileSystem;
 import org.gradle.internal.operations.BuildOperationIdFactory;
 import org.gradle.internal.operations.DefaultBuildOperationIdFactory;
 import org.gradle.internal.progress.BuildOperationListenerManager;
+import org.gradle.api.events.CustomEventListenerBroadcaster;
 import org.gradle.internal.progress.DefaultBuildOperationListenerManager;
+import org.gradle.internal.progress.DefaultCustomEventListenerManager;
+import org.gradle.internal.progress.CustomEventListenerManager;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.remote.MessagingServer;
 import org.gradle.internal.remote.services.MessagingServices;
@@ -161,6 +164,14 @@ public class GlobalScopeServices extends BasicGlobalScopeServices {
 
     BuildOperationListenerManager createBuildOperationService(ListenerManager listenerManager) {
         return new DefaultBuildOperationListenerManager(listenerManager);
+    }
+
+    CustomEventListenerManager createPartialResultListenerManager(ListenerManager listenerManager) {
+        return new DefaultCustomEventListenerManager(listenerManager);
+    }
+
+    CustomEventListenerBroadcaster createCustomEventListenerBroadcaster(ListenerManager listenerManager) {
+        return new DefaultCustomEventListenerManager(listenerManager);
     }
 
     TemporaryFileProvider createTemporaryFileProvider() {

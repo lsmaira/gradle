@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package org.gradle.tooling.internal.provider;
+package org.gradle.internal.progress;
 
-import org.gradle.initialization.BuildEventConsumer;
-import org.gradle.internal.progress.BuildOperationListener;
 import org.gradle.api.events.CustomEventListener;
 
-public interface SubscribableBuildActionRunnerRegistration {
-    Iterable<BuildOperationListener> createListeners(BuildClientSubscriptions clientSubscriptions, BuildEventConsumer consumer);
+public interface CustomEventListenerManager {
 
-    Iterable<CustomEventListener> createCustomEventListeners(BuildEventConsumer consumer);
+    void addListener(CustomEventListener listener);
+
+    void removeListener(CustomEventListener listener);
 }

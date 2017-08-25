@@ -75,8 +75,11 @@ import org.gradle.internal.operations.DefaultBuildOperationQueueFactory;
 import org.gradle.internal.operations.trace.BuildOperationTrace;
 import org.gradle.internal.progress.BuildOperationListener;
 import org.gradle.internal.progress.BuildOperationListenerManager;
+import org.gradle.api.events.CustomEventListenerBroadcaster;
 import org.gradle.internal.progress.DefaultBuildOperationExecutor;
 import org.gradle.internal.progress.DefaultBuildOperationListenerManager;
+import org.gradle.internal.progress.DefaultCustomEventListenerManager;
+import org.gradle.internal.progress.CustomEventListenerManager;
 import org.gradle.internal.resources.DefaultResourceLockCoordinationService;
 import org.gradle.internal.resources.ProjectLeaseRegistry;
 import org.gradle.internal.resources.ResourceLockCoordinationService;
@@ -136,6 +139,14 @@ public class BuildSessionScopeServices extends DefaultServiceRegistry {
 
     BuildOperationListenerManager createBuildOperationListenerManager(ListenerManager listenerManager) {
         return new DefaultBuildOperationListenerManager(listenerManager);
+    }
+
+    CustomEventListenerManager createPartialResultListenerManager(ListenerManager listenerManager) {
+        return new DefaultCustomEventListenerManager(listenerManager);
+    }
+
+    CustomEventListenerBroadcaster createCustomEventListenerBroadcaster(ListenerManager listenerManager) {
+        return new DefaultCustomEventListenerManager(listenerManager);
     }
 
     BuildOperationTrace createBuildOperationTrace(StartParameter startParameter, BuildOperationListenerManager listenerManager) {

@@ -28,6 +28,7 @@ import org.gradle.internal.invocation.BuildActionRunner;
 import org.gradle.internal.logging.LoggingManagerInternal;
 import org.gradle.internal.logging.text.StyledTextOutputFactory;
 import org.gradle.internal.progress.BuildOperationListenerManager;
+import org.gradle.internal.progress.CustomEventListenerManager;
 import org.gradle.internal.service.ServiceRegistration;
 import org.gradle.internal.service.scopes.AbstractPluginServiceRegistry;
 import org.gradle.internal.service.scopes.GradleUserHomeScopeServiceRegistry;
@@ -63,6 +64,7 @@ public class LauncherServices extends AbstractPluginServiceRegistry {
                                           List<SubscribableBuildActionRunnerRegistration> registrations,
                                           GradleLauncherFactory gradleLauncherFactory,
                                           BuildOperationListenerManager buildOperationListenerManager,
+                                          CustomEventListenerManager partialResultListenerManager,
                                           TaskInputsListener inputsListener,
                                           StyledTextOutputFactory styledTextOutputFactory,
                                           ExecutorFactory executorFactory,
@@ -85,6 +87,7 @@ public class LauncherServices extends AbstractPluginServiceRegistry {
                                                         new ValidatingBuildActionRunner(
                                                             new ChainingBuildActionRunner(buildActionRunners))),
                                                     buildOperationListenerManager,
+                                                    partialResultListenerManager,
                                                     registrations),
                                                 gradleLauncherFactory)),
                                         fileSystemChangeWaiterFactory,

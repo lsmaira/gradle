@@ -14,14 +14,26 @@
  * limitations under the License.
  */
 
-package org.gradle.tooling.internal.provider;
+package org.gradle.tooling.events;
 
-import org.gradle.initialization.BuildEventConsumer;
-import org.gradle.internal.progress.BuildOperationListener;
-import org.gradle.api.events.CustomEventListener;
 
-public interface SubscribableBuildActionRunnerRegistration {
-    Iterable<BuildOperationListener> createListeners(BuildClientSubscriptions clientSubscriptions, BuildEventConsumer consumer);
+import org.gradle.api.Incubating;
 
-    Iterable<CustomEventListener> createCustomEventListeners(BuildEventConsumer consumer);
+/**
+ * Interface for custom events with partial results.
+ *
+ * <p> Events can be triggered by any build operation.
+ *
+ * @param <T> The type of result this event is carrying.
+ * @since 4.3
+ */
+@Incubating
+public interface PartialResultEvent<T> {
+
+    /**
+     * Returns a proxy view to the result carried by this event.
+     *
+     * @return The result.
+     */
+    T getResult();
 }

@@ -14,14 +14,7 @@
  * limitations under the License.
  */
 
-package org.gradle.tooling.internal.provider;
-
-import org.gradle.initialization.BuildEventConsumer;
-import org.gradle.internal.progress.BuildOperationListener;
-import org.gradle.api.events.CustomEventListener;
-
-public interface SubscribableBuildActionRunnerRegistration {
-    Iterable<BuildOperationListener> createListeners(BuildClientSubscriptions clientSubscriptions, BuildEventConsumer consumer);
-
-    Iterable<CustomEventListener> createCustomEventListeners(BuildEventConsumer consumer);
-}
+/**
+ * Package with APIs to send events to the Tooling API.
+ */
+package org.gradle.api.events;

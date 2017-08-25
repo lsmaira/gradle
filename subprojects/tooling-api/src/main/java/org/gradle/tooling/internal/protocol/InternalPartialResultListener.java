@@ -14,14 +14,21 @@
  * limitations under the License.
  */
 
-package org.gradle.tooling.internal.provider;
+package org.gradle.tooling.internal.protocol;
 
-import org.gradle.initialization.BuildEventConsumer;
-import org.gradle.internal.progress.BuildOperationListener;
-import org.gradle.api.events.CustomEventListener;
+import org.gradle.tooling.internal.protocol.events.InternalPartialResultEvent;
 
-public interface SubscribableBuildActionRunnerRegistration {
-    Iterable<BuildOperationListener> createListeners(BuildClientSubscriptions clientSubscriptions, BuildEventConsumer consumer);
+/**
+ * DO NOT CHANGE THIS INTERFACE. It is part of the cross-version protocol.
+ *
+ * @since 4.3
+ */
+public interface InternalPartialResultListener {
 
-    Iterable<CustomEventListener> createCustomEventListeners(BuildEventConsumer consumer);
+    /**
+     * Invoked when a partial result event happens in the build being run.
+     *
+     * @param event The issued partial result event.
+     */
+    void onEvent(InternalPartialResultEvent event);
 }

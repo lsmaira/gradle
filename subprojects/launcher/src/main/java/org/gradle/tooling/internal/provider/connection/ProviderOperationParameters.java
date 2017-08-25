@@ -18,6 +18,7 @@ package org.gradle.tooling.internal.provider.connection;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.tooling.internal.protocol.InternalBuildProgressListener;
 import org.gradle.tooling.internal.protocol.InternalLaunchable;
+import org.gradle.tooling.internal.protocol.InternalPartialResultListener;
 import org.gradle.tooling.internal.protocol.ProgressListenerVersion1;
 
 import javax.annotation.Nullable;
@@ -146,6 +147,13 @@ public interface ProviderOperationParameters {
      */
     @Nullable
     InternalBuildProgressListener getBuildProgressListener(InternalBuildProgressListener defaultListener);
+
+    /**
+     * @return When null, do not forward any event.
+     * @since 4.3
+     */
+    @Nullable
+    InternalPartialResultListener getPartialResultListener(InternalPartialResultListener defaultListener);
 
     /**
      * @return When null, assume no arguments.

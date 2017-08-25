@@ -43,13 +43,16 @@ import org.gradle.launcher.exec.BuildActionParameters;
 import org.gradle.process.internal.streams.SafeStreams;
 import org.gradle.tooling.internal.build.DefaultBuildEnvironment;
 import org.gradle.tooling.internal.consumer.parameters.FailsafeBuildProgressListenerAdapter;
+import org.gradle.tooling.internal.consumer.parameters.FailsafePartialResultListenerAdapter;
 import org.gradle.tooling.internal.consumer.versioning.ModelMapping;
 import org.gradle.tooling.internal.gradle.DefaultBuildIdentifier;
 import org.gradle.tooling.internal.protocol.InternalBuildAction;
 import org.gradle.tooling.internal.protocol.InternalBuildActionVersion2;
 import org.gradle.tooling.internal.protocol.InternalBuildEnvironment;
 import org.gradle.tooling.internal.protocol.InternalBuildProgressListener;
+import org.gradle.tooling.internal.protocol.InternalPartialResultListener;
 import org.gradle.tooling.internal.protocol.ModelIdentifier;
+import org.gradle.tooling.internal.protocol.events.InternalPartialResultEvent;
 import org.gradle.tooling.internal.protocol.events.InternalProgressEvent;
 import org.gradle.tooling.internal.provider.connection.ProviderConnectionParameters;
 import org.gradle.tooling.internal.provider.connection.ProviderOperationParameters;
@@ -117,7 +120,7 @@ public class ProviderConnection {
         }
 
         StartParameter startParameter = new ProviderStartParameterConverter().toStartParameter(providerParameters, params.properties);
-        ProgressListenerConfiguration listenerConfig = ProgressListenerConfiguration.from(providerParameters);
+        ListenerConfiguration listenerConfig = ListenerConfiguration.from(providerParameters);
         BuildAction action = new BuildModelAction(startParameter, modelName, tasks != null, listenerConfig.clientSubscriptions);
         return run(action, cancellationToken, listenerConfig, providerParameters, params);
     }
@@ -135,7 +138,7 @@ public class ProviderConnection {
         SerializedPayload serializedAction = payloadSerializer.serialize(clientAction);
         Parameters params = initParams(providerParameters);
         StartParameter startParameter = new ProviderStartParameterConverter().toStartParameter(providerParameters, params.properties);
-        ProgressListenerConfiguration listenerConfig = ProgressListenerConfiguration.from(providerParameters);
+        ListenerConfiguration listenerConfig = ListenerConfiguration.from(providerParameters);
         BuildAction action = new ClientProvidedBuildAction(startParameter, serializedAction, tasks != null, listenerConfig.clientSubscriptions);
         return run(action, cancellationToken, listenerConfig, providerParameters, params);
 
@@ -144,22 +147,23 @@ public class ProviderConnection {
     public Object runTests(ProviderInternalTestExecutionRequest testExecutionRequest, BuildCancellationToken cancellationToken, ProviderOperationParameters providerParameters) {
         Parameters params = initParams(providerParameters);
         StartParameter startParameter = new ProviderStartParameterConverter().toStartParameter(providerParameters, params.properties);
-        ProgressListenerConfiguration listenerConfig = ProgressListenerConfiguration.from(providerParameters);
+        ListenerConfiguration listenerConfig = ListenerConfiguration.from(providerParameters);
         TestExecutionRequestAction action = TestExecutionRequestAction.create(listenerConfig.clientSubscriptions, startParameter, testExecutionRequest);
         return run(action, cancellationToken, listenerConfig, providerParameters, params);
     }
 
-    private Object run(BuildAction action, BuildCancellationToken cancellationToken, ProgressListenerConfiguration progressListenerConfiguration, ProviderOperationParameters providerParameters, Parameters parameters) {
+    private Object run(BuildAction action, BuildCancellationToken cancellationToken, ListenerConfiguration listenerConfiguration, ProviderOperationParameters providerParameters, Parameters parameters) {
         try {
             BuildActionExecuter<ProviderOperationParameters> executer = createExecuter(providerParameters, parameters);
-            BuildRequestContext buildRequestContext = new DefaultBuildRequestContext(new DefaultBuildRequestMetaData(providerParameters.getStartTime()), cancellationToken, progressListenerConfiguration.buildEventConsumer);
+            BuildRequestContext buildRequestContext = new DefaultBuildRequestContext(new DefaultBuildRequestMetaData(providerParameters.getStartTime()), cancellationToken, listenerConfiguration.buildEventConsumer);
             BuildActionResult result = (BuildActionResult) executer.execute(action, buildRequestContext, providerParameters, sharedServices);
             if (result.failure != null) {
                 throw (RuntimeException) payloadSerializer.deserialize(result.failure);
             }
             return payloadSerializer.deserialize(result.result);
         } finally {
-            progressListenerConfiguration.failsafeWrapper.rethrowErrors();
+            listenerConfiguration.failsafeWrapper.rethrowErrors();
+            listenerConfiguration.failsafePartialResultWrapper.rethrowErrors();
         }
     }
 
@@ -253,18 +257,23 @@ public class ProviderConnection {
         }
     }
 
-    private static final class ProgressListenerConfiguration {
+    private static final class ListenerConfiguration {
         private final BuildClientSubscriptions clientSubscriptions;
         private final FailsafeBuildProgressListenerAdapter failsafeWrapper;
+        private final FailsafePartialResultListenerAdapter failsafePartialResultWrapper;
         private final BuildEventConsumer buildEventConsumer;
 
-        public ProgressListenerConfiguration(BuildClientSubscriptions clientSubscriptions, BuildEventConsumer buildEventConsumer, FailsafeBuildProgressListenerAdapter failsafeWrapper) {
+        public ListenerConfiguration(BuildClientSubscriptions clientSubscriptions,
+                                     BuildEventConsumer buildEventConsumer,
+                                     FailsafeBuildProgressListenerAdapter failsafeWrapper,
+                                     FailsafePartialResultListenerAdapter failsafePartialResultWrapper) {
             this.clientSubscriptions = clientSubscriptions;
             this.buildEventConsumer = buildEventConsumer;
             this.failsafeWrapper = failsafeWrapper;
+            this.failsafePartialResultWrapper = failsafePartialResultWrapper;
         }
 
-        private static ProgressListenerConfiguration from(ProviderOperationParameters providerParameters) {
+        private static ListenerConfiguration from(ProviderOperationParameters providerParameters) {
             InternalBuildProgressListener buildProgressListener = providerParameters.getBuildProgressListener(null);
             boolean listenToTestProgress = buildProgressListener != null && buildProgressListener.getSubscribedOperations().contains(InternalBuildProgressListener.TEST_EXECUTION);
             boolean listenToTaskProgress = buildProgressListener != null && buildProgressListener.getSubscribedOperations().contains(InternalBuildProgressListener.TASK_EXECUTION);
@@ -272,12 +281,17 @@ public class ProviderConnection {
             BuildClientSubscriptions clientSubscriptions = new BuildClientSubscriptions(listenToTestProgress, listenToTaskProgress, listenToBuildProgress);
             FailsafeBuildProgressListenerAdapter wrapper = new FailsafeBuildProgressListenerAdapter(buildProgressListener);
             BuildEventConsumer buildEventConsumer = clientSubscriptions.isSendAnyProgressEvents() ? new BuildProgressListenerInvokingBuildEventConsumer(wrapper) : new NoOpBuildEventConsumer();
+
+            InternalPartialResultListener partialResultListener = providerParameters.getPartialResultListener(new NullInternalPartialResultListener());
+            FailsafePartialResultListenerAdapter partialResultWrapper = new FailsafePartialResultListenerAdapter(partialResultListener);
+            buildEventConsumer = new PartialResultListenerEventConsumer(partialResultWrapper, buildEventConsumer);
+
             if (Boolean.TRUE.equals(providerParameters.isEmbedded())) {
                 // Contract requires build events are delivered by a single thread. This is taken care of by the daemon client when not in embedded mode
                 // Need to apply some synchronization when in embedded mode
                 buildEventConsumer = new SynchronizedConsumer(buildEventConsumer);
             }
-            return new ProgressListenerConfiguration(clientSubscriptions, buildEventConsumer, wrapper);
+            return new ListenerConfiguration(clientSubscriptions, buildEventConsumer, wrapper, partialResultWrapper);
         }
 
         private static class SynchronizedConsumer implements BuildEventConsumer {
@@ -292,6 +306,32 @@ public class ProviderConnection {
                 synchronized (this) {
                     delegate.dispatch(message);
                 }
+            }
+        }
+
+        private static class NullInternalPartialResultListener implements InternalPartialResultListener {
+            @Override
+            public void onEvent(InternalPartialResultEvent event) {
+            }
+        }
+    }
+
+    private static final class PartialResultListenerEventConsumer implements BuildEventConsumer {
+        private final InternalPartialResultListener partialResultListener;
+        private final BuildEventConsumer delegate;
+
+        private PartialResultListenerEventConsumer(InternalPartialResultListener partialResultListener, BuildEventConsumer delegate) {
+            this.partialResultListener = partialResultListener;
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void dispatch(Object event) {
+            if (event instanceof InternalPartialResultEvent) {
+                InternalPartialResultEvent resultEvent = (InternalPartialResultEvent) event;
+                this.partialResultListener.onEvent(resultEvent);
+            } else {
+                this.delegate.dispatch(event);
             }
         }
     }

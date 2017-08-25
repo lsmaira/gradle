@@ -14,14 +14,21 @@
  * limitations under the License.
  */
 
-package org.gradle.tooling.internal.provider;
+package org.gradle.api.events;
 
-import org.gradle.initialization.BuildEventConsumer;
-import org.gradle.internal.progress.BuildOperationListener;
-import org.gradle.api.events.CustomEventListener;
+/**
+ * Broadcaster to all {@link CustomEventListener}s registered.
+ *
+ * <p>An instance of this broadcaster can be injected in task classes in order to get broadcaster and send events.
+ *
+ * @since 4.3
+ */
+public interface CustomEventListenerBroadcaster {
 
-public interface SubscribableBuildActionRunnerRegistration {
-    Iterable<BuildOperationListener> createListeners(BuildClientSubscriptions clientSubscriptions, BuildEventConsumer consumer);
-
-    Iterable<CustomEventListener> createCustomEventListeners(BuildEventConsumer consumer);
+    /**
+     * Gets a {@link CustomEventListener} that will broadcast the event to all concerned listeners.
+     *
+     * @return The broadcaster listener.
+     */
+    CustomEventListener getBroadcaster();
 }

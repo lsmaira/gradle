@@ -14,14 +14,25 @@
  * limitations under the License.
  */
 
-package org.gradle.tooling.internal.provider;
+package org.gradle.tooling.internal.protocol.events;
 
-import org.gradle.initialization.BuildEventConsumer;
-import org.gradle.internal.progress.BuildOperationListener;
-import org.gradle.api.events.CustomEventListener;
+/**
+ * DO NOT CHANGE THIS INTERFACE. It is part of the cross-version protocol.
+ *
+ * @since 4.3
+ */
+public interface InternalPartialResultEvent {
 
-public interface SubscribableBuildActionRunnerRegistration {
-    Iterable<BuildOperationListener> createListeners(BuildClientSubscriptions clientSubscriptions, BuildEventConsumer consumer);
+    /**
+     * Indicates if this event implements the given type.
+     *
+     * @param type The type of result expected. Usually the full name of the interface model class
+     * @return True if the result can be adapted to the give type.
+     */
+    boolean isOfType(String type);
 
-    Iterable<CustomEventListener> createCustomEventListeners(BuildEventConsumer consumer);
+    /**
+     * Returns the result.
+     */
+    Object getResult();
 }

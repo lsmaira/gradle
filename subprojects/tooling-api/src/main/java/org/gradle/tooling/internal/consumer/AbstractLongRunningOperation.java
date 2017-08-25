@@ -22,6 +22,7 @@ import org.gradle.tooling.CancellationToken;
 import org.gradle.tooling.LongRunningOperation;
 import org.gradle.tooling.ProgressListener;
 import org.gradle.tooling.events.OperationType;
+import org.gradle.tooling.events.PartialResultListener;
 import org.gradle.tooling.internal.consumer.parameters.ConsumerOperationParameters;
 import org.gradle.util.CollectionUtils;
 
@@ -147,6 +148,12 @@ public abstract class AbstractLongRunningOperation<T extends AbstractLongRunning
         if (eventTypes.contains(OperationType.GENERIC)) {
             operationParamsBuilder.addBuildOperationProgressListeners(listener);
         }
+        return getThis();
+    }
+
+    @Override
+    public LongRunningOperation addPartialResultListener(PartialResultListener listener) {
+        operationParamsBuilder.addPartialResultListener(listener);
         return getThis();
     }
 

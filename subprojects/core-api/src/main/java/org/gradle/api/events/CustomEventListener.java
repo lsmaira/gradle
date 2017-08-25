@@ -14,14 +14,22 @@
  * limitations under the License.
  */
 
-package org.gradle.tooling.internal.provider;
+package org.gradle.api.events;
 
-import org.gradle.initialization.BuildEventConsumer;
-import org.gradle.internal.progress.BuildOperationListener;
-import org.gradle.api.events.CustomEventListener;
+/**
+ * Listener for sending events carrying a custom type of result to the client.
+ *
+ * @since 4.3
+ */
+public interface CustomEventListener {
 
-public interface SubscribableBuildActionRunnerRegistration {
-    Iterable<BuildOperationListener> createListeners(BuildClientSubscriptions clientSubscriptions, BuildEventConsumer consumer);
-
-    Iterable<CustomEventListener> createCustomEventListeners(BuildEventConsumer consumer);
+    /**
+     * Send the result of the given type to the listeners.
+     *
+     * <p>Listeners registered for listening the same type of results (same class complete name) will be notified.
+     *
+     * @param resultType The type of the result being sent.
+     * @param result The result, implementing the given type.
+     */
+    void newResult(String resultType, Object result);
 }

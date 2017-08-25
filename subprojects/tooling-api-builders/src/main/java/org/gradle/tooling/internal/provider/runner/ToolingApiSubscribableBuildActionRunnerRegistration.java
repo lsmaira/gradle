@@ -19,6 +19,7 @@ package org.gradle.tooling.internal.provider.runner;
 import org.gradle.initialization.BuildEventConsumer;
 import org.gradle.internal.progress.BuildOperationDescriptor;
 import org.gradle.internal.progress.BuildOperationListener;
+import org.gradle.api.events.CustomEventListener;
 import org.gradle.internal.progress.OperationFinishEvent;
 import org.gradle.internal.progress.OperationStartEvent;
 import org.gradle.tooling.internal.provider.BuildClientSubscriptions;
@@ -41,6 +42,13 @@ public class ToolingApiSubscribableBuildActionRunnerRegistration implements Subs
             }
             listeners.add(new ClientForwardingTaskOperationListener(consumer, clientSubscriptions, buildListener));
         }
+        return listeners;
+    }
+
+    @Override
+    public Iterable<CustomEventListener> createCustomEventListeners(BuildEventConsumer consumer) {
+        List<CustomEventListener> listeners = new ArrayList<CustomEventListener>();
+        listeners.add(new ClientForwardingCustomEventListener(consumer));
         return listeners;
     }
 
