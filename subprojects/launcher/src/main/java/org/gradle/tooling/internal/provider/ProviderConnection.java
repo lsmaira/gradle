@@ -120,7 +120,7 @@ public class ProviderConnection {
         }
 
         StartParameter startParameter = new ProviderStartParameterConverter().toStartParameter(providerParameters, params.properties);
-        ListenerConfiguration listenerConfig = ListenerConfiguration.from(providerParameters);
+        ListenerConfiguration listenerConfig = ListenerConfiguration.from(providerParameters, payloadSerializer);
         BuildAction action = new BuildModelAction(startParameter, modelName, tasks != null, listenerConfig.clientSubscriptions);
         return run(action, cancellationToken, listenerConfig, providerParameters, params);
     }
@@ -138,7 +138,7 @@ public class ProviderConnection {
         SerializedPayload serializedAction = payloadSerializer.serialize(clientAction);
         Parameters params = initParams(providerParameters);
         StartParameter startParameter = new ProviderStartParameterConverter().toStartParameter(providerParameters, params.properties);
-        ListenerConfiguration listenerConfig = ListenerConfiguration.from(providerParameters);
+        ListenerConfiguration listenerConfig = ListenerConfiguration.from(providerParameters, payloadSerializer);
         BuildAction action = new ClientProvidedBuildAction(startParameter, serializedAction, tasks != null, listenerConfig.clientSubscriptions);
         return run(action, cancellationToken, listenerConfig, providerParameters, params);
 
@@ -147,7 +147,7 @@ public class ProviderConnection {
     public Object runTests(ProviderInternalTestExecutionRequest testExecutionRequest, BuildCancellationToken cancellationToken, ProviderOperationParameters providerParameters) {
         Parameters params = initParams(providerParameters);
         StartParameter startParameter = new ProviderStartParameterConverter().toStartParameter(providerParameters, params.properties);
-        ListenerConfiguration listenerConfig = ListenerConfiguration.from(providerParameters);
+        ListenerConfiguration listenerConfig = ListenerConfiguration.from(providerParameters, payloadSerializer);
         TestExecutionRequestAction action = TestExecutionRequestAction.create(listenerConfig.clientSubscriptions, startParameter, testExecutionRequest);
         return run(action, cancellationToken, listenerConfig, providerParameters, params);
     }
@@ -273,7 +273,7 @@ public class ProviderConnection {
             this.failsafePartialResultWrapper = failsafePartialResultWrapper;
         }
 
-        private static ListenerConfiguration from(ProviderOperationParameters providerParameters) {
+        private static ListenerConfiguration from(ProviderOperationParameters providerParameters, PayloadSerializer serializer) {
             InternalBuildProgressListener buildProgressListener = providerParameters.getBuildProgressListener(null);
             boolean listenToTestProgress = buildProgressListener != null && buildProgressListener.getSubscribedOperations().contains(InternalBuildProgressListener.TEST_EXECUTION);
             boolean listenToTaskProgress = buildProgressListener != null && buildProgressListener.getSubscribedOperations().contains(InternalBuildProgressListener.TASK_EXECUTION);
@@ -283,7 +283,8 @@ public class ProviderConnection {
             BuildEventConsumer buildEventConsumer = clientSubscriptions.isSendAnyProgressEvents() ? new BuildProgressListenerInvokingBuildEventConsumer(wrapper) : new NoOpBuildEventConsumer();
 
             InternalPartialResultListener partialResultListener = providerParameters.getPartialResultListener(new NullInternalPartialResultListener());
-            FailsafePartialResultListenerAdapter partialResultWrapper = new FailsafePartialResultListenerAdapter(partialResultListener);
+            DesserializerInternalPartialResultListener desserializerInternalPartialResultListener = new DesserializerInternalPartialResultListener(partialResultListener, serializer);
+            FailsafePartialResultListenerAdapter partialResultWrapper = new FailsafePartialResultListenerAdapter(desserializerInternalPartialResultListener);
             buildEventConsumer = new PartialResultListenerEventConsumer(partialResultWrapper, buildEventConsumer);
 
             if (Boolean.TRUE.equals(providerParameters.isEmbedded())) {
@@ -313,6 +314,31 @@ public class ProviderConnection {
             @Override
             public void onEvent(InternalPartialResultEvent event) {
             }
+        }
+    }
+
+    private static final class DesserializerInternalPartialResultListener implements InternalPartialResultListener {
+        private final InternalPartialResultListener delegate;
+        private final PayloadSerializer serializer;
+
+        private DesserializerInternalPartialResultListener(InternalPartialResultListener delegate, PayloadSerializer serializer) {
+            this.delegate = delegate;
+            this.serializer = serializer;
+        }
+
+        @Override
+        public void onEvent(final InternalPartialResultEvent event) {
+            delegate.onEvent(new InternalPartialResultEvent() {
+                @Override
+                public boolean isOfType(String type) {
+                    return event.isOfType(type);
+                }
+
+                @Override
+                public Object getResult() {
+                    return serializer.deserialize((SerializedPayload) event.getResult());
+                }
+            });
         }
     }
 

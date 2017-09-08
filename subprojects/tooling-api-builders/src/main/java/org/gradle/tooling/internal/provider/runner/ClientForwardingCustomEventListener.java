@@ -18,27 +18,22 @@ package org.gradle.tooling.internal.provider.runner;
 
 import org.gradle.initialization.BuildEventConsumer;
 import org.gradle.api.events.CustomEventListener;
-import org.gradle.tooling.internal.protocol.events.InternalPartialResultEvent;
+import org.gradle.tooling.internal.provider.events.DefaultPartialResultEvent;
+import org.gradle.tooling.internal.provider.serialization.PayloadSerializer;
+import org.gradle.tooling.internal.provider.serialization.SerializedPayload;
 
 class ClientForwardingCustomEventListener implements CustomEventListener {
     private final BuildEventConsumer eventConsumer;
+    private final PayloadSerializer serializer;
 
-    ClientForwardingCustomEventListener(BuildEventConsumer eventConsumer) {
+    ClientForwardingCustomEventListener(BuildEventConsumer eventConsumer, PayloadSerializer serializer) {
         this.eventConsumer = eventConsumer;
+        this.serializer = serializer;
     }
 
     @Override
-    public void newResult(final String resultType, final Object result) {
-        eventConsumer.dispatch(new InternalPartialResultEvent() {
-            @Override
-            public boolean isOfType(String type) {
-                return resultType.equals(type);
-            }
-
-            @Override
-            public Object getResult() {
-                return result;
-            }
-        });
+    public void newResult(final String type, final Object result) {
+        SerializedPayload serializedPayload = serializer.serialize(result);
+        eventConsumer.dispatch(new DefaultPartialResultEvent(type, serializedPayload));
     }
 }

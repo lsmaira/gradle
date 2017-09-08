@@ -19,9 +19,10 @@ package org.gradle.tooling.internal.provider;
 import org.gradle.initialization.BuildEventConsumer;
 import org.gradle.internal.progress.BuildOperationListener;
 import org.gradle.api.events.CustomEventListener;
+import org.gradle.tooling.internal.provider.serialization.PayloadSerializer;
 
 public interface SubscribableBuildActionRunnerRegistration {
     Iterable<BuildOperationListener> createListeners(BuildClientSubscriptions clientSubscriptions, BuildEventConsumer consumer);
 
-    Iterable<CustomEventListener> createCustomEventListeners(BuildEventConsumer consumer);
+    Iterable<CustomEventListener> createCustomEventListeners(BuildEventConsumer consumer, PayloadSerializer serializer);
 }

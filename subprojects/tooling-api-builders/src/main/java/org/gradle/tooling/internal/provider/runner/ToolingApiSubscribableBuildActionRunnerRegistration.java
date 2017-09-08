@@ -24,6 +24,7 @@ import org.gradle.internal.progress.OperationFinishEvent;
 import org.gradle.internal.progress.OperationStartEvent;
 import org.gradle.tooling.internal.provider.BuildClientSubscriptions;
 import org.gradle.tooling.internal.provider.SubscribableBuildActionRunnerRegistration;
+import org.gradle.tooling.internal.provider.serialization.PayloadSerializer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,9 +47,9 @@ public class ToolingApiSubscribableBuildActionRunnerRegistration implements Subs
     }
 
     @Override
-    public Iterable<CustomEventListener> createCustomEventListeners(BuildEventConsumer consumer) {
+    public Iterable<CustomEventListener> createCustomEventListeners(BuildEventConsumer consumer, PayloadSerializer serializer) {
         List<CustomEventListener> listeners = new ArrayList<CustomEventListener>();
-        listeners.add(new ClientForwardingCustomEventListener(consumer));
+        listeners.add(new ClientForwardingCustomEventListener(consumer, serializer));
         return listeners;
     }
 

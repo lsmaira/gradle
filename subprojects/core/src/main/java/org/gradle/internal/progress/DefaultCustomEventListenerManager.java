@@ -39,7 +39,7 @@ public class DefaultCustomEventListenerManager implements CustomEventListenerMan
     }
 
     @Override
-    public CustomEventListener getBroadcaster() {
-        return listenerManager.getBroadcaster(CustomEventListener.class);
+    public void newResult(String resultType, Object result) {
+        listenerManager.getBroadcaster(CustomEventListener.class).newResult(resultType, result);
     }
 }

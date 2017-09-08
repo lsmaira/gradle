@@ -61,8 +61,7 @@ class PartialResultEventCrossVersion  extends ToolingApiSpecification {
                 @TaskAction
                 void runTask() {
                     CustomEventListenerBroadcaster listenerBroadcaster = getCustomEventListenerBroadcaster();
-                    CustomEventListener listenerBroadcast = listenerBroadcaster.getBroadcaster();
-                    listenerBroadcast.newResult('${CustomModel.name}', new DefaultCustomModel("myValue"));
+                    listenerBroadcaster.newResult('${CustomModel.name}', new DefaultCustomModel("myValue"));
                 }
             }
         """

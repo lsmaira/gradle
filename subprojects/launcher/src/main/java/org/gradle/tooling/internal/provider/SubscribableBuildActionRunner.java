@@ -25,6 +25,7 @@ import org.gradle.internal.progress.BuildOperationListener;
 import org.gradle.internal.progress.BuildOperationListenerManager;
 import org.gradle.api.events.CustomEventListener;
 import org.gradle.internal.progress.CustomEventListenerManager;
+import org.gradle.tooling.internal.provider.serialization.PayloadSerializer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,11 +70,12 @@ public class SubscribableBuildActionRunner implements BuildActionRunner {
 
     private void registerListenersForClientSubscriptions(BuildClientSubscriptions clientSubscriptions, GradleInternal gradle) {
         BuildEventConsumer eventConsumer = gradle.getServices().get(BuildEventConsumer.class);
+        PayloadSerializer serializer = gradle.getServices().get(PayloadSerializer.class);
         for (SubscribableBuildActionRunnerRegistration registration : registrations) {
             for (BuildOperationListener listener : registration.createListeners(clientSubscriptions, eventConsumer)) {
                 registerListener(listener);
             }
-            for (CustomEventListener listener : registration.createCustomEventListeners(eventConsumer)) {
+            for (CustomEventListener listener : registration.createCustomEventListeners(eventConsumer, serializer)) {
                 registerCustomEventListener(listener);
             }
         }

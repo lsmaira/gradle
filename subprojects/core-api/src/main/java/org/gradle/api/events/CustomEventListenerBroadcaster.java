@@ -26,9 +26,12 @@ package org.gradle.api.events;
 public interface CustomEventListenerBroadcaster {
 
     /**
-     * Gets a {@link CustomEventListener} that will broadcast the event to all concerned listeners.
+     * Send the result of the given type to the listeners.
      *
-     * @return The broadcaster listener.
+     * <p>Listeners registered for listening the same type of results (same class complete name) will be notified.
+     *
+     * @param resultType The type of the result being sent.
+     * @param result The result, implementing the given type.
      */
-    CustomEventListener getBroadcaster();
+    void newResult(String resultType, Object result);
 }
